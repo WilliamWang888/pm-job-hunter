@@ -215,37 +215,204 @@ python scripts/sync_tracker.py --excel data/JobTracker.xlsx --db data/tracker.db
 
 ---
 
-## Setup (from scratch on a new machine)
+## Setup on your own machine
+
+Works on **macOS, Linux, and Windows**. The fetch / filter / dedupe / Excel /
+SQLite pipeline is pure Python and is fully cross-platform. The only piece
+that differs by OS is **how the email gets sent**:
+
+| Platform | Default email backend | Requirements |
+|---|---|---|
+| **Windows + Outlook desktop** | `outlook` (COM automation) | Outlook installed and signed in |
+| **macOS / Linux / Windows w/o Outlook** | `smtp` | Any SMTP account (Gmail, iCloud, Outlook.com, Fastmail, your own…) |
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/WilliamWang888/pm-job-hunter.git
+cd pm-job-hunter
+```
+
+> If you use **Agency Copilot CLI**, clone it into your skills directory
+> instead so it auto-registers as a skill:
+> `git clone … "<Agency-Cowork>/skills/pm-job-hunter"`
+
+### 2. Install Python dependencies (Python 3.11+)
+
+```bash
+# macOS / Linux
+python3 -m pip install --user openpyxl rapidfuzz pyyaml requests
+
+# Windows (PowerShell)
+python -m pip install --user openpyxl rapidfuzz pyyaml requests
+```
+
+### 3. Edit your profile
+
+Open `skills/pm-job-hunter/config/profile.yaml` and customize:
+
+- `target_locations` — your city / region preferences
+- `ai_signal_keywords` — the AI/ML terms that signal a real AI role for you
+- `must_haves`, `nice_to_haves`, `profile_summary` — used by the LLM reranker
+- `email:` block (see step 4)
+
+### 4. Configure your email delivery
+
+Add an `email:` block at the top of `profile.yaml`. Pick **one** of the two
+recipes below.
+
+**Recipe A — SMTP (works on Mac, Linux, Windows; recommended for non-Microsoft accounts):**
+
+```yaml
+email:
+  backend: smtp
+  to: "you@example.com"            # where the digest is delivered
+  smtp_host: "smtp.gmail.com"      # your provider
+  smtp_port: 587                   # 587 = STARTTLS, 465 = implicit SSL
+  smtp_starttls: true
+  smtp_user: "you@gmail.com"
+  smtp_from: "you@gmail.com"       # usually same as smtp_user
+  # smtp_pass: leave blank — set via env var (see below)
+```
+
+Set the password as an environment variable so it never lands in git:
+
+```bash
+# macOS / Linux (add to ~/.zshrc or ~/.bashrc to persist)
+export PMJH_SMTP_PASS="your-app-password-here"
+
+# Windows (PowerShell — persists for this user)
+[Environment]::SetEnvironmentVariable("PMJH_SMTP_PASS","your-app-password","User")
+```
+
+**Common providers:**
+
+| Provider | Host | Port | Notes |
+|---|---|---|---|
+| Gmail | `smtp.gmail.com` | 587 | Requires an [App Password](https://myaccount.google.com/apppasswords) (2FA must be on). Don't use your normal password. |
+| Outlook.com / Hotmail | `smtp-mail.outlook.com` | 587 | Use an [app password](https://account.live.com/proofs/AppPassword). |
+| iCloud Mail | `smtp.mail.me.com` | 587 | Requires an [app-specific password](https://support.apple.com/en-us/102654). |
+| Fastmail | `smtp.fastmail.com` | 465 | Set `smtp_port: 465` and `smtp_starttls: false`. |
+| Your company SMTP | ask IT | usually 587 | |
+
+**Recipe B — Outlook desktop (Windows only):**
+
+```yaml
+email:
+  backend: outlook
+  to: "you@yourcompany.com"        # any address you want it sent to
+```
+
+The skill will drive your local Outlook via COM and send from the
+currently-signed-in profile. No password needed — Outlook handles auth.
+
+> **All settings can also be passed as env vars** if you'd rather not put
+> them in YAML: `PMJH_RECIPIENT`, `PMJH_EMAIL_BACKEND`, `PMJH_SMTP_HOST`,
+> `PMJH_SMTP_PORT`, `PMJH_SMTP_USER`, `PMJH_SMTP_PASS`, `PMJH_SMTP_FROM`,
+> `PMJH_SMTP_STARTTLS` (`1`/`0`). Env vars override YAML.
+
+### 5. Smoke-test the pipeline (no LLM, no email)
+
+```bash
+cd skills/pm-job-hunter
+python scripts/fetch_jobs.py --config config/companies.yaml --out data/raw_jobs.json
+python scripts/pipeline.py --raw data/raw_jobs.json --profile config/profile.yaml \
+    --db data/tracker.db --out data/candidates.json
+```
+
+You should see ~5,000+ raw jobs collapsed to 20–40 candidates.
+
+### 6. Send a test email
+
+After a real run produces `data/digest.json`:
+
+```bash
+python scripts/_send_digest.py
+```
+
+If the email lands, you're done. If SMTP fails, the script prints the exact
+missing variable.
+
+### 7. Schedule the daily run
+
+**Option A — Agency Copilot task-scheduler (cross-platform, the same way the author runs it):**
 
 ```powershell
-# 1. Clone into your Agency Cowork skills directory
-git clone https://github.com/WilliamWang888/pm-job-hunter.git "<Agency-Cowork>/skills/pm-job-hunter"
-
-# 2. Install Python deps (Python 3.11+)
-pip install openpyxl rapidfuzz pyyaml requests
-
-# 3. Edit your profile
-# <Agency-Cowork>/skills/pm-job-hunter/skills/pm-job-hunter/config/profile.yaml
-
-# 4. Optionally edit company watch list
-# <Agency-Cowork>/skills/pm-job-hunter/skills/pm-job-hunter/config/companies.yaml
-
-# 5. Test end-to-end (without LLM/email — pipeline only)
-cd "<Agency-Cowork>/skills/pm-job-hunter/skills/pm-job-hunter"
-python scripts/fetch_jobs.py --config config/companies.yaml --out data/raw_jobs.json
-python scripts/pipeline.py --raw data/raw_jobs.json --profile config/profile.yaml --db data/tracker.db --out data/candidates.json
-
-# 6. Register the daily 8 AM (PDT) schedule
+# Windows
 & "<Agency-Cowork>/skills/task-scheduler/scripts/task-manager.ps1" create `
     -Id daily-pm-job-hunter `
     -Name "Daily PM Job Hunter" `
     -Schedule "0 15 * * *" `
     -Timeout 15 `
     -Prompt "<see SKILL.md for the recommended scheduled prompt>"
-
-# 7. Make sure the scheduler service auto-starts on login (one-time)
 & "<Agency-Cowork>/skills/task-scheduler/scripts/task-manager.ps1" ensure-running
 ```
+
+> ⚠️ **Cron strings are interpreted in UTC**, not local time. For 8 AM PDT
+> use `0 15 * * *`; for 8 AM PST use `0 16 * * *`. You'll need to flip this
+> at DST changeover.
+
+**Option B — macOS `launchd`:**
+
+Create `~/Library/LaunchAgents/com.user.pmjobhunter.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.user.pmjobhunter</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string><string>-lc</string>
+    <string>cd ~/code/pm-job-hunter/skills/pm-job-hunter &amp;&amp; \
+      python3 scripts/fetch_jobs.py --config config/companies.yaml --out data/raw_jobs.json &amp;&amp; \
+      python3 scripts/pipeline.py --raw data/raw_jobs.json --profile config/profile.yaml --db data/tracker.db --out data/candidates.json &amp;&amp; \
+      python3 scripts/finalize.py &amp;&amp; \
+      python3 scripts/_send_digest.py</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>/tmp/pmjobhunter.log</string>
+  <key>StandardErrorPath</key><string>/tmp/pmjobhunter.err</string>
+</dict>
+</plist>
+```
+
+Then load it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.user.pmjobhunter.plist
+launchctl start com.user.pmjobhunter   # test fire
+```
+
+> Note: Option B skips the LLM rerank step (which requires an Agency Copilot
+> session). You'll still get filtered + deduped matches in your Excel
+> tracker, but without LLM scores. To get LLM scoring on Mac/Linux, swap the
+> `_send_digest.py` step for an LLM API call of your choice.
+
+**Option C — Linux `cron`:**
+
+```cron
+0 15 * * * cd ~/code/pm-job-hunter/skills/pm-job-hunter && \
+  python3 scripts/fetch_jobs.py --config config/companies.yaml --out data/raw_jobs.json && \
+  python3 scripts/pipeline.py --raw data/raw_jobs.json --profile config/profile.yaml --db data/tracker.db --out data/candidates.json && \
+  python3 scripts/finalize.py && python3 scripts/_send_digest.py >> ~/pmjobhunter.log 2>&1
+```
+
+**Option D — Windows Task Scheduler (no Agency Copilot required):**
+
+```powershell
+$action = New-ScheduledTaskAction -Execute "python.exe" `
+  -Argument "scripts\_run_all.py" `
+  -WorkingDirectory "C:\path\to\pm-job-hunter\skills\pm-job-hunter"
+$trigger = New-ScheduledTaskTrigger -Daily -At 8am
+Register-ScheduledTask -TaskName "PM Job Hunter" -Action $action -Trigger $trigger
+```
+
+(You'd write a tiny `_run_all.py` that chains fetch → pipeline → finalize →
+send. ~10 lines.)
 
 ---
 

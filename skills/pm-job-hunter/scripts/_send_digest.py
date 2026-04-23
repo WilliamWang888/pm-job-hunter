@@ -1,15 +1,52 @@
-"""Compose HTML digest email body and send via Outlook COM to signed-in user only."""
+"""Compose HTML digest email body and send it.
+
+Cross-platform: defaults to Outlook COM on Windows; falls back to SMTP on
+macOS / Linux (or when ``PMJH_EMAIL_BACKEND=smtp`` is set).
+
+Configuration precedence (highest first):
+  1. Environment variables: ``PMJH_RECIPIENT``, ``PMJH_EMAIL_BACKEND``,
+     ``PMJH_SMTP_HOST``, ``PMJH_SMTP_PORT``, ``PMJH_SMTP_USER``,
+     ``PMJH_SMTP_PASS``, ``PMJH_SMTP_FROM``, ``PMJH_SMTP_STARTTLS`` (1/0).
+  2. ``email:`` block in ``config/profile.yaml`` (see README).
+  3. Built-in defaults (Outlook COM on Windows).
+"""
 from __future__ import annotations
 import json
 import os
+import platform
+import smtplib
+import ssl
 import subprocess
 import sys
+from email.message import EmailMessage
 from pathlib import Path
 
-DIGEST = Path(r"skills\pm-job-hunter\skills\pm-job-hunter\data\digest.json")
-RECIPIENT = "williwang@microsoft.com"
-EXCEL_DISPLAY_PATH = r"%USERPROFILE%\JobHunter\JobTracker.xlsx"
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+DIGEST = SKILL_ROOT / "data" / "digest.json"
+PROFILE_YAML = SKILL_ROOT / "config" / "profile.yaml"
+
+DEFAULT_RECIPIENT = "williwang@microsoft.com"
+EXCEL_DISPLAY_PATH = (
+    r"%USERPROFILE%\JobHunter\JobTracker.xlsx"
+    if platform.system() == "Windows"
+    else "~/JobHunter/JobTracker.xlsx"
+)
 TARGET_EMOJI = "\U0001F3AF"  # 🎯
+
+
+def _load_email_config() -> dict:
+    """Load email config from profile.yaml (best-effort)."""
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return {}
+    if not PROFILE_YAML.exists():
+        return {}
+    try:
+        data = yaml.safe_load(PROFILE_YAML.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+    return data.get("email", {}) or {}
 
 
 def esc(s: str) -> str:
@@ -89,9 +126,10 @@ def build_html(digest: dict) -> str:
 
 
 def send_via_com(recipient: str, subject: str, html_body: str) -> None:
-    # Write body to temp file to avoid quoting chaos
-    body_file = Path("data") / "_email_body.html"
-    body_file.parent.mkdir(parents=True, exist_ok=True)
+    """Windows / Outlook desktop. Sends from the signed-in profile."""
+    data_dir = SKILL_ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    body_file = data_dir / "_email_body.html"
     body_file.write_text(html_body, encoding="utf-8")
 
     ps_script = r"""
@@ -106,7 +144,7 @@ $mail.HTMLBody = $body
 $mail.Send()
 Write-Output "Sent to $Recipient"
 """
-    ps_file = Path("data") / "_send_email.ps1"
+    ps_file = data_dir / "_send_email.ps1"
     ps_file.write_text(ps_script, encoding="utf-8")
 
     cmd = [
@@ -123,15 +161,99 @@ Write-Output "Sent to $Recipient"
         sys.exit(result.returncode)
 
 
+def send_via_smtp(recipient: str, subject: str, html_body: str, cfg: dict) -> None:
+    """Cross-platform (Mac, Linux, Windows). Uses SMTP credentials from env or profile.yaml."""
+    host = os.environ.get("PMJH_SMTP_HOST") or cfg.get("smtp_host")
+    port = int(os.environ.get("PMJH_SMTP_PORT") or cfg.get("smtp_port") or 587)
+    user = os.environ.get("PMJH_SMTP_USER") or cfg.get("smtp_user")
+    pwd = os.environ.get("PMJH_SMTP_PASS") or cfg.get("smtp_pass")
+    sender = os.environ.get("PMJH_SMTP_FROM") or cfg.get("smtp_from") or user
+    starttls_env = os.environ.get("PMJH_SMTP_STARTTLS")
+    starttls = (
+        starttls_env not in ("0", "false", "False", "no")
+        if starttls_env is not None
+        else cfg.get("smtp_starttls", True)
+    )
+
+    if not (host and user and pwd and sender):
+        print(
+            "ERROR: SMTP backend requires PMJH_SMTP_HOST, PMJH_SMTP_USER, "
+            "PMJH_SMTP_PASS, and PMJH_SMTP_FROM (or matching keys under "
+            "`email:` in profile.yaml).",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = recipient
+    msg.set_content("This message requires an HTML-capable client.")
+    msg.add_alternative(html_body, subtype="html")
+
+    context = ssl.create_default_context()
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=context) as s:
+            s.login(user, pwd)
+            s.send_message(msg)
+    else:
+        with smtplib.SMTP(host, port) as s:
+            s.ehlo()
+            if starttls:
+                s.starttls(context=context)
+                s.ehlo()
+            s.login(user, pwd)
+            s.send_message(msg)
+    print(f"Sent (SMTP {host}:{port}) to {recipient}")
+
+
+def _resolve_backend(cfg: dict) -> str:
+    backend = (
+        os.environ.get("PMJH_EMAIL_BACKEND")
+        or cfg.get("backend")
+        or ("outlook" if platform.system() == "Windows" else "smtp")
+    )
+    return backend.lower()
+
+
+def _resolve_recipient(cfg: dict) -> str:
+    return (
+        os.environ.get("PMJH_RECIPIENT")
+        or cfg.get("to")
+        or DEFAULT_RECIPIENT
+    )
+
+
 def main() -> int:
     digest = json.loads(DIGEST.read_text(encoding="utf-8"))
     date_label = digest.get("date_label", "")
     subject = f"{TARGET_EMOJI} PM Job Matches \u2014 {date_label}"
     html = build_html(digest)
-    os.chdir(Path(r"skills\pm-job-hunter\skills\pm-job-hunter"))
-    send_via_com(RECIPIENT, subject, html)
+
+    cfg = _load_email_config()
+    recipient = _resolve_recipient(cfg)
+    backend = _resolve_backend(cfg)
+
+    if backend == "outlook":
+        if platform.system() != "Windows":
+            print(
+                "ERROR: backend=outlook only works on Windows with Outlook "
+                "desktop installed. Set PMJH_EMAIL_BACKEND=smtp (or "
+                "email.backend: smtp in profile.yaml).",
+                file=sys.stderr,
+            )
+            return 2
+        send_via_com(recipient, subject, html)
+    elif backend == "smtp":
+        send_via_smtp(recipient, subject, html, cfg)
+    else:
+        print(f"ERROR: unknown backend '{backend}'. Use 'outlook' or 'smtp'.",
+              file=sys.stderr)
+        return 2
+
     print(f"Subject: {subject}")
-    print(f"Recipient: {RECIPIENT}")
+    print(f"Recipient: {recipient}")
+    print(f"Backend: {backend}")
     print(f"Matches: {len(digest.get('items', []))}")
     return 0
 
