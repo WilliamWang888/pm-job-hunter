@@ -1,0 +1,81 @@
+# User profile for PM Job Hunter
+# Used by LLM to score relevance of each job.
+
+user:
+  name: William Wang
+  email_delivery: self  # send daily digest to own Outlook inbox
+
+target_roles:
+  - Senior Product Manager
+  - Staff Product Manager
+  - Principal Product Manager
+  - Group Product Manager
+  - Lead Product Manager
+  - Director of Product
+  - Director, Product
+  - Head of Product
+  - VP Product
+  - VP of Product
+
+target_locations:
+  - San Francisco
+  - SF Bay Area
+  - Bay Area
+  - Palo Alto
+  - Mountain View
+  - Menlo Park
+  - Oakland
+  - Seattle
+  - Redmond
+  - Bellevue
+  - New York
+  - NYC
+  - Manhattan
+  - Brooklyn
+  - Remote - US
+  - Remote (US)
+  - United States - Remote
+  - Remote US
+  - Anywhere US
+
+ai_signal_keywords:
+  - AI
+  - artificial intelligence
+  - machine learning
+  - ML
+  - LLM
+  - large language model
+  - foundation model
+  - generative AI
+  - GenAI
+  - agent
+  - agentic
+  - inference
+  - RAG
+  - retrieval augmented
+  - embedding
+  - fine-tun
+  - prompt engineering
+  - computer vision
+  - NLP
+
+must_haves:
+  - Role must be directly working on AI/ML products (not just using AI tools internally)
+
+nice_to_haves:
+  - Opportunity to build and launch a new AI-native product 0-to-1
+  - AI-native workflows as part of the role
+
+profile_summary: |
+  Senior PM with 5+ years of experience. Targeting Senior+ PM roles directly
+  building AI/ML products (not roles that merely use AI tools internally).
+  Goal: build and launch a new AI-native product leveraging modern AI
+  workflows and skills. Strong preference for roles close to core AI/ML
+  work (model development, inference, agents, developer tools for AI).
+  Open to Big Tech + Series B+ startups.
+
+years_experience: 5
+seniority_min: Senior
+
+# Used in v0.2 for tailored resume/cover letter generation
+master_resume_path: ""  # TODO: point to .docx when v0.2 is built

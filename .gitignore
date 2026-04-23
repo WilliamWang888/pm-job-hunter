@@ -1,0 +1,11 @@
+data/raw_jobs.json
+data/candidates.json
+data/ranked.json
+data/digest.json
+data/tracker.db
+data/JobTracker.xlsx
+data/_email_body.html
+data/_send_email.ps1
+__pycache__/
+*.pyc
+.venv/

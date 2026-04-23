@@ -1,0 +1,161 @@
+{
+  "generated_at": "2026-04-22T17:38:36",
+  "date_label": "April 22, 2026",
+  "items": [
+    {
+      "id": "14f6fe03db8b7985",
+      "company": "Databricks",
+      "title": "Staff Product Manager, AI Platform",
+      "location": "Seattle, Washington | San Francisco, California | San Francisco, California",
+      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8427940002",
+      "apply_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8427940002",
+      "score": 94,
+      "why_match": "Core AI/ML platform role (MLflow, model serving, LLM infra) at a leading AI-native company \u2014 perfect Staff PM fit."
+    },
+    {
+      "id": "18727050a8e69a0c",
+      "company": "Anthropic",
+      "title": "Senior Product Manager, Education Labs",
+      "location": "San Francisco, CA | New York City, NY | San Francisco, CA",
+      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5183006008",
+      "apply_url": "https://job-boards.greenhouse.io/anthropic/jobs/5183006008",
+      "score": 90,
+      "why_match": "Senior PM owning an AI-native learning product at a frontier lab; directly builds on Claude capabilities."
+    },
+    {
+      "id": "5215441a401df49e",
+      "company": "Scale AI",
+      "title": "Staff Product Manager, Agentic Platform",
+      "location": "New York, NY; San Francisco, CA; Washington, DC | Washington, DC",
+      "url": "https://job-boards.greenhouse.io/scaleai/jobs/4612403005",
+      "apply_url": "https://job-boards.greenhouse.io/scaleai/jobs/4612403005",
+      "score": 88,
+      "why_match": "Staff PM for Agentic AI platform at Scale \u2014 direct 0-to-1 agentic product leadership matches goals."
+    },
+    {
+      "id": "b5db16c7434133b6",
+      "company": "Brex",
+      "title": "Director of Product, Growth/AI",
+      "location": "Seattle, Washington, United States | San Francisco, CA | Vancouver, British Columbia, Canada | San Francisco, CA | San Francisco, California, United States | San Francisco, CA | New York, New York, United States | San Francisco, CA",
+      "url": "https://www.brex.com/careers/8433470002?gh_jid=8433470002",
+      "apply_url": "https://www.brex.com/careers/8433470002?gh_jid=8433470002",
+      "score": 82,
+      "why_match": "Director of Product owning Growth/AI at Brex \u2014 AI-native growth product with senior scope."
+    },
+    {
+      "id": "dff39e64f592ab33",
+      "company": "Mercury",
+      "title": "Senior Product Manager - API & Agentic Banking",
+      "location": "San Francisco, CA, New York, NY, Portland, OR, or Remote within Canada or United States | Any Office or Remote",
+      "url": "https://job-boards.greenhouse.io/mercury/jobs/5867562004",
+      "apply_url": "https://job-boards.greenhouse.io/mercury/jobs/5867562004",
+      "score": 80,
+      "why_match": "Senior PM for API & Agentic Banking \u2014 builds agentic AI banking product end-to-end."
+    },
+    {
+      "id": "0ef2a60cc68eec14",
+      "company": "MongoDB",
+      "title": "Senior Product Manager - IT Go-to-Market AI",
+      "location": "New York City; Palo Alto | New York City",
+      "url": "https://www.mongodb.com/careers/job/?gh_jid=7705474",
+      "apply_url": "https://www.mongodb.com/careers/job/?gh_jid=7705474",
+      "score": 68,
+      "why_match": "Senior PM for IT GTM AI \u2014 AI-focused product, though more internal than AI-native end-user."
+    },
+    {
+      "id": "27728d2a6f136127",
+      "company": "MongoDB",
+      "title": "Staff Product Manager - Internal AI",
+      "location": "Palo Alto",
+      "url": "https://www.mongodb.com/careers/job/?gh_jid=7781724",
+      "apply_url": "https://www.mongodb.com/careers/job/?gh_jid=7781724",
+      "score": 66,
+      "why_match": "Staff PM on internal AI \u2014 AI/ML product work but scoped to internal tooling rather than AI-native product."
+    },
+    {
+      "id": "c307f0fcdd67f6cd",
+      "company": "Mercury",
+      "title": "Senior Product Manager - Mission Control",
+      "location": "San Francisco, CA, New York, NY, Portland, OR, or Remote within Canada or United States | Any Office or Remote",
+      "url": "https://job-boards.greenhouse.io/mercury/jobs/5817294004",
+      "apply_url": "https://job-boards.greenhouse.io/mercury/jobs/5817294004",
+      "score": 62,
+      "why_match": "Senior PM Mission Control at Mercury \u2014 senior scope, some AI signal but not core AI-native."
+    },
+    {
+      "id": "39b51bbf17679ea6",
+      "company": "Databricks",
+      "title": "Staff Product Manager, Content Experience",
+      "location": "Seattle, Washington | San Francisco, California | San Francisco, California",
+      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8041821002",
+      "apply_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8041821002",
+      "score": 60,
+      "why_match": "Staff PM Content Experience at Databricks with AI-assisted guidance \u2014 adjacent to core AI/ML work."
+    },
+    {
+      "id": "09fb79a6ce0010e4",
+      "company": "Brex",
+      "title": "Group Product Manager",
+      "location": "New York, New York, United States | San Francisco, CA | Vancouver, British Columbia, Canada | San Francisco, CA | San Francisco, California, United States | San Francisco, CA | Seattle, Washington, United States | San Francisco, CA",
+      "url": "https://www.brex.com/careers/8438581002?gh_jid=8438581002",
+      "apply_url": "https://www.brex.com/careers/8438581002?gh_jid=8438581002",
+      "score": 58,
+      "why_match": "Group PM at Brex \u2014 senior role at AI-forward fintech, but role scope not explicitly AI-native."
+    },
+    {
+      "id": "ca9d01bf07aa9673",
+      "company": "Databricks",
+      "title": "Staff Product Manager, Serverless Workspaces",
+      "location": "San Francisco, California | Seattle, Washington | San Francisco, California",
+      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8420607002",
+      "apply_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8420607002",
+      "score": 57,
+      "why_match": "Staff PM Serverless Workspaces at Databricks \u2014 platform product, indirect AI/ML exposure."
+    },
+    {
+      "id": "a11357b43a4de5d5",
+      "company": "Databricks",
+      "title": "Staff Product Manager, Security",
+      "location": "San Francisco, California | Seattle, Washington | San Francisco, California",
+      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7110499002",
+      "apply_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7110499002",
+      "score": 55,
+      "why_match": "Staff PM Security at Databricks \u2014 platform security product, limited direct AI/ML ownership."
+    },
+    {
+      "id": "6a908a4ad022ce5f",
+      "company": "Brex",
+      "title": "Director Product Management, Banking + AP",
+      "location": "Vancouver, British Columbia, Canada | San Francisco, CA | San Francisco, California, United States | San Francisco, CA | New York, New York, United States | San Francisco, CA | Seattle, Washington, United States | San Francisco, CA",
+      "url": "https://www.brex.com/careers/8439929002?gh_jid=8439929002",
+      "apply_url": "https://www.brex.com/careers/8439929002?gh_jid=8439929002",
+      "score": 55,
+      "why_match": "Director PM Banking + AP at Brex \u2014 senior scope in fintech; AI exposure is contextual, not core."
+    },
+    {
+      "id": "4078651ef9882e26",
+      "company": "Stripe",
+      "title": "Staff Product Manager, Enterprise (Industries) ",
+      "location": "San Francisco, Seattle, New York, Chicago, Atlanta, Remote | US",
+      "url": "https://stripe.com/jobs/search?gh_jid=7812856",
+      "apply_url": "https://stripe.com/jobs/search?gh_jid=7812856",
+      "score": 54,
+      "why_match": "Staff PM Enterprise at Stripe \u2014 strong seniority and scope, but role is not AI-native."
+    },
+    {
+      "id": "3424825c7ab1056b",
+      "company": "Stripe",
+      "title": "Staff Product Manager, Stripe Apps and Extensibility Platform",
+      "location": "San Francisco, Seattle, NYC, Chicago, Toronto, US- Remote, Canada-Remote | US",
+      "url": "https://stripe.com/jobs/search?gh_jid=7550590",
+      "apply_url": "https://stripe.com/jobs/search?gh_jid=7550590",
+      "score": 52,
+      "why_match": "Staff PM Stripe Apps/Extensibility \u2014 platform PM role with limited direct AI/ML product ownership."
+    }
+  ],
+  "excel": {
+    "path": "%USERPROFILE%\\JobHunter\\JobTracker.xlsx",
+    "refreshed": false,
+    "message": "Target path %USERPROFILE%\\JobHunter\\JobTracker.xlsx unreachable from sandbox; SQLite updated. Move local JobTracker.xlsx manually or next scheduled 8 AM run will refresh it."
+  }
+}

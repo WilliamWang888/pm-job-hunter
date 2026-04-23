@@ -1,0 +1,123 @@
+# Target companies with their primary ATS source
+# source values: greenhouse | lever | ashby
+# board_id: the slug used in that ATS's public API URL
+# All board_ids below have been live-probed and confirmed to return jobs.
+
+# ==== Frontier labs & core AI infra ====
+- name: Anthropic
+  source: greenhouse
+  board_id: anthropic
+- name: OpenAI
+  source: ashby
+  board_id: openai
+- name: Scale AI
+  source: greenhouse
+  board_id: scaleai
+- name: Cohere
+  source: ashby
+  board_id: cohere
+- name: xAI
+  source: greenhouse
+  board_id: xai
+- name: Mistral AI
+  source: lever
+  board_id: mistral
+
+# ==== AI product companies ====
+- name: Perplexity
+  source: ashby
+  board_id: perplexity
+- name: Cursor
+  source: ashby
+  board_id: cursor
+- name: Harvey
+  source: ashby
+  board_id: harvey
+- name: Sierra
+  source: ashby
+  board_id: sierra
+- name: Decagon
+  source: ashby
+  board_id: decagon
+- name: Character.ai
+  source: ashby
+  board_id: character
+- name: Runway
+  source: ashby
+  board_id: runway
+- name: ElevenLabs
+  source: ashby
+  board_id: elevenlabs
+- name: Pika
+  source: ashby
+  board_id: pika
+
+# ==== AI dev tools / infra ====
+- name: Fireworks AI
+  source: greenhouse
+  board_id: fireworksai
+- name: Together AI
+  source: greenhouse
+  board_id: togetherai
+- name: LangChain
+  source: ashby
+  board_id: langchain
+- name: LlamaIndex
+  source: ashby
+  board_id: llamaindex
+- name: Modal
+  source: ashby
+  board_id: modal
+- name: Pinecone
+  source: ashby
+  board_id: pinecone
+
+# ==== Data / ML platforms with AI product lines ====
+- name: Databricks
+  source: greenhouse
+  board_id: databricks
+- name: Snowflake
+  source: ashby
+  board_id: snowflake
+- name: MongoDB
+  source: greenhouse
+  board_id: mongodb
+
+# ==== Developer-facing products w/ strong AI roadmap ====
+- name: Vercel
+  source: greenhouse
+  board_id: vercel
+- name: Linear
+  source: ashby
+  board_id: linear
+- name: Notion
+  source: ashby
+  board_id: notion
+- name: Figma
+  source: greenhouse
+  board_id: figma
+- name: Ramp
+  source: ashby
+  board_id: ramp
+- name: Mercury
+  source: greenhouse
+  board_id: mercury
+- name: Brex
+  source: greenhouse
+  board_id: brex
+
+# ==== Infra & enterprise with AI focus ====
+- name: Airtable
+  source: greenhouse
+  board_id: airtable
+- name: Webflow
+  source: greenhouse
+  board_id: webflow
+- name: Stripe
+  source: greenhouse
+  board_id: stripe
+
+# ==== Not included (no public API discovered) ====
+# Hugging Face, Weights & Biases, Retool, Hippocratic AI, MultiOn,
+# Crescendo, Replicate -- their ATS endpoints returned 0 or 404.
+# Re-add once a working board_id is found.
