@@ -6,6 +6,20 @@ Built as an **Agency Copilot skill** (compatible with the [Agency Cowork](https:
 
 ---
 
+## Daily email digest
+
+Lands in your Outlook inbox every morning at 8 AM, sorted by LLM fit score with one-sentence rationale, direct apply links, and color-coded scores (green ≥ 80, amber 60–79, gray < 60):
+
+![Daily email digest](docs/screenshots/email-digest.png)
+
+## Local Excel tracker
+
+Auto-refreshed every run from the SQLite source of truth. Edit the **Status** column in Excel to track applications (`Matched` → `Applied` → `Interview` → `Offer`/`Rejected`/`Passed`); changes sync back via `sync_tracker.py`:
+
+![Excel tracker](docs/screenshots/excel-tracker.png)
+
+---
+
 ## What it does
 
 Every morning at 8:00 AM local:
