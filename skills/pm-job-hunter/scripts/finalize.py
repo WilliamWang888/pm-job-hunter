@@ -114,7 +114,20 @@ def main() -> int:
     db_path = Path(args.db)
     excel_path = Path(os.path.expandvars(args.excel))
 
-    # Persist scores to SQLite
+    # Persist scores to SQLite. We also need is_new/first_seen for the digest, so
+    # build a quick lookup of which ids the pipeline marked as "new" in this run.
+    pipeline_new_ids: set[str] = set()
+    candidates_path = Path(args.ranked).parent / "candidates.json"
+    if candidates_path.exists():
+        try:
+            with open(candidates_path, "r", encoding="utf-8") as f:
+                cand_doc = json.load(f)
+            for c in cand_doc.get("candidates", []):
+                if c.get("is_new") and c.get("id"):
+                    pipeline_new_ids.add(c["id"])
+        except Exception:
+            pass
+
     conn = sqlite3.connect(db_path)
     updated = 0
     for item in ranked:
@@ -133,7 +146,8 @@ def main() -> int:
     for item in sorted(ranked, key=lambda x: x.get("score", 0), reverse=True):
         jid = item.get("id")
         row = conn.execute(
-            "SELECT company, title, location, url, apply_url FROM jobs WHERE id = ?", (jid,)
+            "SELECT company, title, location, url, apply_url, first_seen_at, posted_at, status FROM jobs WHERE id = ? AND status != 'closed'",
+            (jid,),
         ).fetchone()
         if not row:
             continue
@@ -146,6 +160,9 @@ def main() -> int:
             "apply_url": row["apply_url"],
             "score": item.get("score"),
             "why_match": item.get("why_match", ""),
+            "first_seen_at": row["first_seen_at"],
+            "posted_at": row["posted_at"] if "posted_at" in row.keys() else None,
+            "is_new": jid in pipeline_new_ids,
         })
     conn.close()
 

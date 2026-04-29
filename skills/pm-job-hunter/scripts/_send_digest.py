@@ -58,7 +58,10 @@ def esc(s: str) -> str:
 
 def build_html(digest: dict) -> str:
     items = digest.get("items", [])
+    # Sort: new jobs first, then by score desc within each group.
+    items = sorted(items, key=lambda x: (0 if x.get("is_new") else 1, -1 * (x.get("score") or 0)))
     total = len(items)
+    new_count = sum(1 for i in items if i.get("is_new"))
     date_label = digest.get("date_label", "")
     excel_info = digest.get("excel", {})
     excel_locked_note = ""
@@ -73,12 +76,39 @@ def build_html(digest: dict) -> str:
 
     rows = []
     for i, item in enumerate(items, start=1):
+        is_new = bool(item.get("is_new"))
+        first_seen = (item.get("first_seen_at") or "")[:10]
+        posted_raw = item.get("posted_at") or ""
+        # ATS sources hand back ISO strings (greenhouse/ashby) or millisecond
+        # epoch strings (lever). Normalize both to YYYY-MM-DD for the email.
+        posted_display = ""
+        if posted_raw:
+            s = str(posted_raw)
+            if s.isdigit() and len(s) >= 10:
+                try:
+                    from datetime import datetime, timezone
+                    posted_display = datetime.fromtimestamp(int(s) / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+                except Exception:
+                    posted_display = s[:10]
+            else:
+                posted_display = s[:10]
+        new_badge = (
+            "<span style='background:#1a7f37;color:#fff;font-size:10px;font-weight:bold;"
+            "padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle'>NEW</span>"
+            if is_new else ""
+        )
+        first_seen_cell = (
+            f"<span style='color:#1a7f37;font-weight:bold'>{esc(first_seen)}</span>"
+            if is_new else f"<span style='color:#57606a'>{esc(first_seen)}</span>"
+        )
         rows.append(
             "<tr>"
             f"<td style='text-align:center;padding:6px 10px;border:1px solid #e1e4e8'>{i}</td>"
-            f"<td style='padding:6px 10px;border:1px solid #e1e4e8'><strong>{esc(item.get('company'))}</strong></td>"
+            f"<td style='padding:6px 10px;border:1px solid #e1e4e8'><strong>{esc(item.get('company'))}</strong>{new_badge}</td>"
             f"<td style='padding:6px 10px;border:1px solid #e1e4e8'>{esc(item.get('title'))}</td>"
             f"<td style='padding:6px 10px;border:1px solid #e1e4e8;font-size:12px;color:#57606a'>{esc(item.get('location'))}</td>"
+            f"<td style='padding:6px 10px;border:1px solid #e1e4e8;font-size:12px;color:#57606a'>{esc(posted_display)}</td>"
+            f"<td style='padding:6px 10px;border:1px solid #e1e4e8;font-size:12px'>{first_seen_cell}</td>"
             f"<td style='text-align:center;padding:6px 10px;border:1px solid #e1e4e8;font-weight:bold;color:{'#1a7f37' if (item.get('score') or 0) >= 80 else ('#9a6700' if (item.get('score') or 0) >= 60 else '#57606a')}'>{esc(item.get('score'))}</td>"
             f"<td style='padding:6px 10px;border:1px solid #e1e4e8;max-width:360px'>{esc(item.get('why_match'))}</td>"
             f"<td style='padding:6px 10px;border:1px solid #e1e4e8'><a href='{esc(item.get('url'))}'>Job page</a></td>"
@@ -86,9 +116,13 @@ def build_html(digest: dict) -> str:
             "</tr>"
         )
 
+    new_phrase = (
+        f" — <span style='color:#1a7f37;font-weight:bold'>{new_count} new</span>"
+        if new_count > 0 else " — no brand-new postings; full list refreshed against today's open roles"
+    )
     header = (
-        f"<p style='font-size:15px;margin:0 0 8px 0'><strong>{total}</strong> matches today — "
-        f"{esc(date_label)}.</p>"
+        f"<p style='font-size:15px;margin:0 0 8px 0'><strong>{total}</strong> matches today{new_phrase} "
+        f"({esc(date_label)}).</p>"
         f"<p style='font-size:13px;color:#57606a;margin:0 0 12px 0'>"
         f"Local Excel tracker: <code>{esc(EXCEL_DISPLAY_PATH)}</code></p>"
     )
@@ -102,6 +136,8 @@ def build_html(digest: dict) -> str:
         "<th style='padding:8px 10px;border:1px solid #305496'>Company</th>"
         "<th style='padding:8px 10px;border:1px solid #305496'>Role</th>"
         "<th style='padding:8px 10px;border:1px solid #305496'>Location</th>"
+        "<th style='padding:8px 10px;border:1px solid #305496'>Posted</th>"
+        "<th style='padding:8px 10px;border:1px solid #305496'>First seen</th>"
         "<th style='padding:8px 10px;border:1px solid #305496'>Score</th>"
         "<th style='padding:8px 10px;border:1px solid #305496'>Why it matches</th>"
         "<th style='padding:8px 10px;border:1px solid #305496'>Job page</th>"

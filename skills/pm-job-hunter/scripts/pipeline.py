@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     description TEXT,
     first_seen_at TEXT NOT NULL,
     last_seen_at TEXT NOT NULL,
+    posted_at TEXT,
     score INTEGER,
     why_match TEXT,
     status TEXT NOT NULL DEFAULT 'matched',
@@ -127,27 +128,33 @@ def init_db(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.executescript(SCHEMA)
+    # Migrate older DBs that predate the posted_at column.
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "posted_at" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN posted_at TEXT")
+        conn.commit()
     return conn
 
 
 def upsert_job(conn: sqlite3.Connection, job: dict[str, Any], now: str) -> bool:
     """Returns True if newly inserted, False if already existed (last_seen updated)."""
+    posted_at = job.get("updated_at", "") or ""
     cur = conn.execute("SELECT id FROM jobs WHERE id = ?", (job["id"],))
     row = cur.fetchone()
     if row:
         conn.execute(
-            "UPDATE jobs SET last_seen_at = ?, location = ?, url = ?, apply_url = ?, description = ? WHERE id = ?",
-            (now, job["location"], job["url"], job["apply_url"], job["description"], job["id"]),
+            "UPDATE jobs SET last_seen_at = ?, location = ?, url = ?, apply_url = ?, description = ?, posted_at = COALESCE(NULLIF(?, ''), posted_at) WHERE id = ?",
+            (now, job["location"], job["url"], job["apply_url"], job["description"], posted_at, job["id"]),
         )
         return False
     conn.execute(
         """INSERT INTO jobs (id, company, title, location, source, source_job_id, url, apply_url,
-            description, first_seen_at, last_seen_at, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'matched')""",
+            description, first_seen_at, last_seen_at, posted_at, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'matched')""",
         (
             job["id"], job["company"], job["title"], job["location"], job["source"],
             job.get("source_job_id", ""), job["url"], job["apply_url"], job["description"],
-            now, now,
+            now, now, posted_at,
         ),
     )
     return True
@@ -198,24 +205,65 @@ def main() -> int:
         if locs and len(locs) > 1:
             job["location"] = " | ".join(locs)
 
-    # Stage 3: persist into SQLite; keep only NEW jobs as candidates
+    # Stage 3: persist into SQLite — track which fingerprints we saw today so we can
+    # mark anything missing as 'closed'. Every deduped job becomes a candidate (not
+    # just newly-inserted ones) so the LLM re-evaluates the full set of currently
+    # open roles each run. This catches: (a) JD edits, (b) profile changes, and
+    # (c) the common case where no genuinely new postings appeared but the open
+    # set shifted.
     now = datetime.now(timezone.utc).isoformat()
     conn = init_db(Path(args.db))
-    new_jobs: list[dict[str, Any]] = []
-    seen_existing = 0
+    new_count = 0
+    seen_today_ids: set[str] = set()
     for job in deduped:
         is_new = upsert_job(conn, job, now)
         if is_new:
-            new_jobs.append(job)
-        else:
-            seen_existing += 1
+            new_count += 1
+        seen_today_ids.add(job["id"])
+        job["is_new"] = is_new
+
+    # Mark jobs not seen in this fetch as closed (they were removed from the ATS).
+    # Only flip jobs whose status is still in the "open" set so we don't clobber
+    # user-edited statuses like Applied/Interview/Offer.
+    # Safety: if the fetch was clearly degraded (very small raw set), skip the
+    # close pass — otherwise a transient network issue would silently mark every
+    # tracked role as closed.
+    closed_ids: list[str] = []
+    SAFE_CLOSE_MIN_RAW = 500
+    if len(raw_jobs) >= SAFE_CLOSE_MIN_RAW:
+        cur = conn.execute(
+            "SELECT id FROM jobs WHERE status IN ('matched', 'new', 'open')"
+        )
+        for (jid,) in cur.fetchall():
+            if jid not in seen_today_ids:
+                closed_ids.append(jid)
+        if closed_ids:
+            conn.executemany(
+                "UPDATE jobs SET status = 'closed' WHERE id = ?",
+                [(jid,) for jid in closed_ids],
+            )
+    else:
+        print(
+            f"[persist] WARNING: only {len(raw_jobs)} raw jobs (<{SAFE_CLOSE_MIN_RAW}) — "
+            f"skipping close-pass to avoid false positives.",
+            file=sys.stderr,
+        )
     conn.commit()
     conn.close()
-    print(f"[persist] {len(new_jobs)} new, {seen_existing} already known", file=sys.stderr)
+    print(
+        f"[persist] {new_count} new, {len(deduped) - new_count} refreshed, "
+        f"{len(closed_ids)} marked closed",
+        file=sys.stderr,
+    )
 
-    # Stage 4: cap candidates to max for LLM rerank
-    new_jobs.sort(key=lambda j: j.get("updated_at", ""), reverse=True)
-    candidates = new_jobs[: args.max_candidates]
+    # Stage 4: cap candidates to max for LLM rerank.
+    # Sort: new postings first (so they bubble up), then by ATS updated_at desc.
+    deduped.sort(
+        key=lambda j: (0 if j.get("is_new") else 1, -1 * len(j.get("updated_at") or "")),
+    )
+    deduped.sort(key=lambda j: j.get("updated_at") or "", reverse=True)
+    deduped.sort(key=lambda j: 0 if j.get("is_new") else 1)
+    candidates = deduped[: args.max_candidates]
 
     # Trim description for LLM context (keep concise excerpts)
     for c in candidates:
@@ -229,7 +277,8 @@ def main() -> int:
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump({"candidates": candidates, "stats": {
             "raw": len(raw_jobs), "filtered": len(stage1), "deduped": len(deduped),
-            "new": len(new_jobs), "existing": seen_existing, "to_score": len(candidates),
+            "new": new_count, "refreshed": len(deduped) - new_count,
+            "closed": len(closed_ids), "to_score": len(candidates),
         }}, f, ensure_ascii=False, indent=2)
     print(f"[OK] wrote {len(candidates)} candidates to {args.out}", file=sys.stderr)
     return 0

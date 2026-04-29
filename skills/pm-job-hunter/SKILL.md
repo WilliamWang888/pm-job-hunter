@@ -17,7 +17,7 @@ Curate and email a daily digest of Senior+ PM AI/ML role matches. Fetches from p
 
 ## Workflow (on-demand or scheduled)
 
-When triggered (daily 8am or on-demand), execute these steps IN ORDER:
+When triggered (daily 8am or on-demand), execute these steps IN ORDER. **You MUST run every Python step every time** — do not skip the fetch or pipeline steps even if `data/` already contains files from a previous run. The pipeline reads today's fresh ATS fetch, refreshes the SQLite mirror, marks new vs returning roles, and prunes closed listings. Skipping any step causes the digest to be reconstructed from stale data.
 
 ### Step 1: Fetch jobs
 Run the fetch script which pulls from each company's configured ATS:
@@ -34,7 +34,7 @@ python scripts\pipeline.py --raw data\raw_jobs.json --db data\tracker.db --profi
 Output: `candidates.json` with up to 30 new candidates to score.
 
 ### Step 3: LLM rerank
-Read `data\candidates.json` and `config\profile.yaml`. For each candidate, score 0–100 for fit with the profile. Focus on: AI/ML product experience directly relevant; seniority match; startup/stage fit; location compatibility.
+Read `data\candidates.json` and `config\profile.yaml`. Each candidate now carries an `is_new` flag — score every candidate fairly, but in the email surface NEW postings first (the digest sender already sorts new-first). For each candidate, score 0–100 for fit with the profile. Focus on: AI/ML product experience directly relevant; seniority match; startup/stage fit; location compatibility.
 
 For EACH candidate, produce:
 - `score`: integer 0–100
